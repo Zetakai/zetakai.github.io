@@ -902,6 +902,23 @@ section {
     }
 }
 
+/* Streaming message styles */
+.streaming-message .message-content {
+    position: relative;
+}
+
+.streaming-message .message-content::after {
+    content: '▋';
+    color: #6366f1;
+    animation: blink 1s infinite;
+    margin-left: 2px;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
 /* Mobile responsiveness for chat */
 @media (max-width: 480px) {
     .chat-widget {

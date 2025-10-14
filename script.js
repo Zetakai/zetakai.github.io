@@ -228,10 +228,14 @@ class ChatWidget {
         this.showTypingIndicator();
 
         try {
-            // Get AI response
+            // Get AI response (handles streaming internally)
             const response = await this.getAIResponse(message);
             this.hideTypingIndicator();
-            this.addMessage(response, 'bot');
+            
+            // Only add message if it's not already added by streaming
+            if (!this.chatMessages.querySelector('.streaming-message')) {
+                this.addMessage(response, 'bot');
+            }
         } catch (error) {
             this.hideTypingIndicator();
             this.addMessage("Sorry, I'm having trouble connecting right now. Please try again later.", 'bot');
@@ -377,6 +381,94 @@ Answer questions about Zaki's work, projects, and skills. Keep responses helpful
             { role: 'user', content: userMessage }
         ];
 
+        // Try streaming first, fallback to regular API
+        try {
+            return await this.getStreamingResponse(messages);
+        } catch (streamError) {
+            console.warn('Streaming failed, falling back to regular API:', streamError);
+            return await this.getRegularResponse(messages);
+        }
+    }
+
+    async getStreamingResponse(messages) {
+        const response = await fetch('https://slm-portochat.muhammadfarid-zaki.workers.dev/api/chat/stream', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: messages,
+                model: '@cf/meta/llama-3-8b-instruct',
+                temperature: 0.7,
+                max_tokens: 1000
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Streaming API request failed: ${response.status}`);
+        }
+
+        // Create a streaming message element
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message streaming-message';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = '';
+        
+        messageDiv.appendChild(contentDiv);
+        this.chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.type === 'content' && data.content) {
+                                fullResponse += data.content;
+                                contentDiv.textContent = fullResponse;
+                                // Scroll to bottom as content updates
+                                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                            } else if (data.type === 'done') {
+                                // Streaming complete
+                                messageDiv.classList.remove('streaming-message');
+                                break;
+                            } else if (data.type === 'error') {
+                                throw new Error(data.error);
+                            }
+                        } catch (e) {
+                            // Skip invalid JSON lines
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            messageDiv.remove();
+            throw error;
+        }
+
+        // Store in history
+        this.chatHistory.push({ content: fullResponse, sender: 'bot', timestamp: Date.now() });
+        
+        return fullResponse;
+    }
+
+    async getRegularResponse(messages) {
         const response = await fetch('https://slm-portochat.muhammadfarid-zaki.workers.dev/api/chat', {
             method: 'POST',
             headers: {
