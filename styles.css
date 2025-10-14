@@ -107,10 +107,10 @@ body {
 
 /* ==================== Hero Section ==================== */
 .hero {
-    min-height: 100vh;
+    min-height: 80vh;
     display: flex;
     align-items: center;
-    padding-top: 80px;
+    padding: 100px 0 60px 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
     position: relative;
     overflow: hidden;
@@ -131,7 +131,7 @@ body {
 .hero-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4rem;
+    gap: 2.5rem;
     align-items: center;
     position: relative;
     z-index: 1;
@@ -154,15 +154,15 @@ body {
 .hero-subtitle {
     font-size: 1.5rem;
     color: var(--text-secondary);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     font-weight: 500;
 }
 
 .hero-description {
     font-size: 1.1rem;
     color: var(--text-secondary);
-    margin-bottom: 2rem;
-    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
 }
 
 .hero-buttons {
