@@ -229,6 +229,12 @@ class ChatWidget {
             return await this.getCloudflareAIResponse(userMessage);
         } catch (error) {
             console.warn('Cloudflare AI failed, falling back to knowledge base:', error);
+            
+            // If it's a static environment, provide a helpful message
+            if (error.message === 'AI chat requires a live server environment') {
+                return this.getKnowledgeBasedResponse(userMessage) + 
+                       "\n\n💡 Note: For the full AI experience, visit this portfolio on a live server environment.";
+            }
         }
         
         // Fall back to enhanced knowledge-based responses
@@ -236,6 +242,11 @@ class ChatWidget {
     }
 
     async getCloudflareAIResponse(userMessage) {
+        // Check if we're in a static environment (like GitHub Pages)
+        if (window.location.protocol === 'file:' || window.location.hostname === 'github.io') {
+            throw new Error('AI chat requires a live server environment');
+        }
+
         // Use your Cloudflare Workers AI endpoint with prompt engineering
         const systemPrompt = `You are Zaki's AI assistant. Here's what you know about Zaki:
 
@@ -527,16 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatSectionToggle = document.getElementById('chat-section-toggle');
     if (chatSectionToggle) {
         chatSectionToggle.addEventListener('click', () => {
-            // Scroll to chat section first
-            document.getElementById('chat').scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-            
-            // Then open the chat widget after a short delay
-            setTimeout(() => {
-                chatWidget.toggleChat();
-            }, 500);
+            // Directly open the chat widget
+            chatWidget.toggleChat();
         });
     }
 });
