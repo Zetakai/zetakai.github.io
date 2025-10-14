@@ -116,6 +116,24 @@ const ZAKI_KNOWLEDGE = {
         "USFC - logistics tracking app"
     ],
     projects: {
+        "Gliana Labs": {
+            description: "Cutting-edge AI solutions provider and SaaS platform specializing in advanced artificial intelligence services including machine learning, computer vision, OCR, chatbots, and custom AI model development",
+            tech: "AI/ML Platform",
+            website: "https://glianalabs.com/",
+            status: "Current Project - Building",
+            features: [
+                "Machine Learning services and custom ML models",
+                "Computer Vision with face recognition and object detection", 
+                "Advanced OCR technology for text extraction",
+                "Conversational AI and intelligent chatbots",
+                "Speech recognition and voice processing",
+                "Liveness detection and biometric security",
+                "Deepfake detection and content authenticity",
+                "Predictive analytics and forecasting",
+                "Custom AI development and API integration"
+            ],
+            mission: "Revolutionize business operations with cutting-edge artificial intelligence solutions and services"
+        },
         "Coco Face Recognition": {
             description: "Advanced face recognition system using deep learning and computer vision to accurately identify and verify individuals in real-time",
             tech: "Python",
@@ -300,10 +318,17 @@ PERSONAL INFO:
 - Role: Mobile Developer
 - Location: Jakarta, Indonesia
 - Email: muhammadfarid.zaki@gmail.com
-- Experience: 2+ years professional experience in mobile development
+- Experience: 3+ years professional experience in mobile development
 
 PROFILE:
 A Mobile app developer with high passion to learn and to grow within the industry. I'm a results-driven and collaborative person with good analytical skills. Working in a team always brings something new to me and I see feedback as a good way to become better.
+
+PERSONAL PROJECT - GLIANA LABS:
+- Personal project: Building a cutting-edge AI solutions provider and SaaS platform
+- Website: https://glianalabs.com/
+- Specializes in advanced AI services: machine learning, computer vision, OCR, chatbots, custom AI models
+- Features: ML services, computer vision, speech recognition, liveness detection, deepfake detection, predictive analytics
+- Mission: Revolutionize business operations with cutting-edge AI solutions
 
 PROFESSIONAL EXPERIENCE:
 - PT Macra Teknologi Indonesia (Mobile Developer, 08/2022 – present, Jakarta, Indonesia)
@@ -414,11 +439,17 @@ Answer questions about Zaki's work, projects, and skills. Keep responses helpful
         // Simple, effective prompt engineering
         return `I am Zaki's AI assistant. I know everything about Zaki:
 
-Zaki (Muhammad Farid Zaki) is a Mobile Developer with 4+ years experience. Username: Zetakai.
+Zaki (Muhammad Farid Zaki) is a Mobile Developer with 3+ years experience. Username: Zetakai.
+
+Personal Project - Gliana Labs:
+- Personal project: Building a cutting-edge AI solutions provider and SaaS platform
+- Website: https://glianalabs.com/
+- Specializes in advanced AI services: machine learning, computer vision, OCR, chatbots, custom AI models
 
 Skills: React Native, Mobile Development, JavaScript, Python, Node.js, AI/ML, Face Recognition, Backend Development, Web Development. Currently learning Rust.
 
 Projects:
+- Gliana Labs: AI solutions platform with comprehensive AI services (Current Project)
 - Coco Face Recognition: Advanced face recognition system using deep learning and computer vision (Python)
 - LLM Chat: On-premise Large Language Model chat application with privacy and control (JavaScript)  
 - CocoSpeak: Text-to-speech and speech processing application with AI voice synthesis (Python)
@@ -500,6 +531,10 @@ I answer as Zaki's helpful assistant:`;
         if (message.includes('rust')) {
             return `${knowledge.personal.nickname} is currently learning Rust Language as part of his continuous learning journey. He's always exploring new technologies to expand his skill set!`;
         }
+
+        if (message.includes('gliana') || message.includes('gliana labs')) {
+            return `${knowledge.personal.nickname} is building Gliana Labs as a personal project - a cutting-edge AI solutions provider and SaaS platform! Visit https://glianalabs.com/ to learn more. Gliana Labs specializes in advanced AI services including machine learning, computer vision, OCR, chatbots, and custom AI model development. It's his most ambitious personal project, focusing on revolutionizing business operations with cutting-edge AI solutions.`;
+        }
         
         if (message.includes('organization') || message.includes('team')) {
             return `${knowledge.personal.nickname} is part of ${Object.values(knowledge.organizations).join(' and ')}. He collaborates with talented developers to create impactful projects.`;
@@ -535,11 +570,18 @@ I answer as Zaki's helpful assistant:`;
         /*
         const systemPrompt = `You are Zaki's AI assistant. Here's what you know about Zaki:
 
-Zaki (Muhammad Farid Zaki) is a Mobile Developer with 4+ years experience. Username: Zetakai.
+Zaki (Muhammad Farid Zaki) is a Mobile Developer with 3+ years experience. Username: Zetakai.
 
 Skills: React Native, Mobile Development, JavaScript, Python, Node.js, AI/ML, Face Recognition, Backend Development, Web Development. Currently learning Rust.
 
+Personal Project - Gliana Labs:
+- Personal project: Building a cutting-edge AI solutions provider and SaaS platform
+- Website: https://glianalabs.com/
+- Specializes in advanced AI services: machine learning, computer vision, OCR, chatbots, custom AI models
+- Features: ML services, computer vision, speech recognition, liveness detection, deepfake detection, predictive analytics
+
 Projects:
+- Gliana Labs: AI solutions platform with comprehensive AI services (Current Project)
 - Coco Face Recognition: Advanced face recognition system using deep learning and computer vision (Python)
 - LLM Chat: On-premise Large Language Model chat application with privacy and control (JavaScript)  
 - CocoSpeak: Text-to-speech and speech processing application with AI voice synthesis (Python)
@@ -594,7 +636,7 @@ Answer questions about Zaki's work, projects, and skills. Keep responses helpful
         
         // Option 3: Anthropic Claude with prompt engineering
         /*
-        const systemPrompt = `You are Zaki's AI assistant. Zaki (Muhammad Farid Zaki) is a Mobile Developer with 4+ years experience. Skills: React Native, Mobile Development, JavaScript, Python, Node.js, AI/ML, Face Recognition, Backend Development, Web Development. Currently learning Rust. Projects: Coco Face Recognition (Python), LLM Chat (JavaScript), CocoSpeak (Python). Organizations: @macra-id, @Gliana-Labs. GitHub: https://github.com/Zetakai. Answer questions about Zaki's work, projects, and skills.`;
+        const systemPrompt = `You are Zaki's AI assistant. Zaki (Muhammad Farid Zaki) is a Mobile Developer with 3+ years experience. Skills: React Native, Mobile Development, JavaScript, Python, Node.js, AI/ML, Face Recognition, Backend Development, Web Development. Currently learning Rust. Current Project: Gliana Labs - AI solutions platform (https://glianalabs.com/) with comprehensive AI services. Projects: Gliana Labs (Current), Coco Face Recognition (Python), LLM Chat (JavaScript), CocoSpeak (Python). Organizations: @macra-id, @Gliana-Labs. GitHub: https://github.com/Zetakai. Answer questions about Zaki's work, projects, and skills.`;
         
         const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
