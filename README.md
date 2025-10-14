@@ -230,7 +230,7 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 👨‍💻 About the Developer
 
 **Muhammad Farid Zaki (Zetakai)**
-- 🚀 **Mobile Developer** with 4+ years experience
+- 🚀 **Mobile Developer** with 3+ years experience
 - 🤖 **AI/ML Enthusiast** - Face recognition, LLM applications
 - 📱 **React Native Specialist** - Cross-platform development
 - 🐍 **Python Developer** - Backend and AI solutions

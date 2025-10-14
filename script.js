@@ -61,15 +61,60 @@ const ZAKI_KNOWLEDGE = {
         nickname: "Zaki",
         username: "Zetakai",
         role: "Mobile Developer",
-        location: "Indonesia",
-        experience: "4+ years in mobile development and AI/ML"
+        location: "Jakarta, Indonesia",
+        email: "muhammadfarid.zaki@gmail.com",
+        experience: "2+ years professional experience in mobile development",
+        profile: "A Mobile app developer with high passion to learn and to grow within the industry. I'm a results-driven and collaborative person with good analytical skills. Working in a team always brings something new to me and I see feedback as a good way to become better."
     },
     skills: {
         primary: ["React Native", "Mobile Development", "Cross-platform Development"],
-        languages: ["JavaScript", "Python", "Node.js", "Rust (learning)"],
-        technologies: ["AI/ML", "Face Recognition", "LLM Chat Applications", "Backend Development", "Web Development"],
-        frameworks: ["React Native", "Node.js", "TensorFlow", "PyTorch"]
+        languages: ["JavaScript", "TypeScript", "Python", "Golang"],
+        technologies: ["React Native + Expo", "FFmpeg", "Firebase", "Google Maps API", "Face Recognition", "Git"],
+        tools: ["Android Studio", "XCode", "Jira"],
+        frameworks: ["React Native", "Expo", "Firebase"]
     },
+    certificates: [
+        "Software & Data Engineering",
+        "Engineering with Python", 
+        "Relational Database (SQL)",
+        "Mobile App Developer (React Native)",
+        "Javascript certificate",
+        "Golang certificate"
+    ],
+    experience: {
+        "PT Macra Teknologi Indonesia": {
+            position: "Mobile Developer",
+            duration: "08/2022 – present",
+            location: "Jakarta, Indonesia",
+            achievements: [
+                "Developed mobile apps utilizing FFmpeg, Firebase, React Native, and Google Maps API for live location tracking and mapping features",
+                "Integrated advanced features such as face recognition for enhanced functionality",
+                "Published and maintained 10+ apps to both Google Play Store and Apple App Store, actively used by thousands of users"
+            ]
+        },
+        "TriSquare Technology (M) Sdn Bhd": {
+            position: "Freelance React Native Developer", 
+            duration: "05/2022 – 08/2022",
+            achievements: [
+                "Turned UI concepts from Figma into code"
+            ]
+        }
+    },
+    education: {
+        "Institut Teknologi Tangerang Selatan": {
+            degree: "Informatics",
+            duration: "07/2024 – present"
+        },
+        "Politeknik Keuangan Negara STAN": {
+            degree: "Accounting and Finance",
+            duration: "2017 – 2018"
+        }
+    },
+    professionalProjects: [
+        "GSI - HRIS",
+        "Mavent Video Booth App", 
+        "USFC - logistics tracking app"
+    ],
     projects: {
         "Coco Face Recognition": {
             description: "Advanced face recognition system using deep learning and computer vision to accurately identify and verify individuals in real-time",
@@ -250,18 +295,52 @@ class ChatWidget {
         // Use your Cloudflare Workers AI endpoint with prompt engineering
         const systemPrompt = `You are Zaki's AI assistant. Here's what you know about Zaki:
 
-Zaki (Muhammad Farid Zaki) is a Mobile Developer with 4+ years experience. Username: Zetakai.
+PERSONAL INFO:
+- Name: Muhammad Farid Zaki (Zaki)
+- Role: Mobile Developer
+- Location: Jakarta, Indonesia
+- Email: muhammadfarid.zaki@gmail.com
+- Experience: 2+ years professional experience in mobile development
 
-Skills: React Native, Mobile Development, JavaScript, Python, Node.js, AI/ML, Face Recognition, Backend Development, Web Development. Currently learning Rust.
+PROFILE:
+A Mobile app developer with high passion to learn and to grow within the industry. I'm a results-driven and collaborative person with good analytical skills. Working in a team always brings something new to me and I see feedback as a good way to become better.
 
-Projects:
+PROFESSIONAL EXPERIENCE:
+- PT Macra Teknologi Indonesia (Mobile Developer, 08/2022 – present, Jakarta, Indonesia)
+  * Developed mobile apps utilizing FFmpeg, Firebase, React Native, and Google Maps API
+  * Integrated face recognition features
+  * Published and maintained 10+ apps to Google Play Store and Apple App Store
+- TriSquare Technology (Freelance React Native Developer, 05/2022 – 08/2022)
+  * Turned UI concepts from Figma into code
+
+SKILLS:
+- Languages: JavaScript, TypeScript, Python, Golang
+- Technologies: React Native + Expo, FFmpeg, Firebase, Google Maps API, Face Recognition, Git
+- Tools: Android Studio, XCode, Jira
+
+CERTIFICATES:
+- Software & Data Engineering
+- Engineering with Python
+- Relational Database (SQL)
+- Mobile App Developer (React Native)
+- Javascript certificate
+- Golang certificate
+
+EDUCATION:
+- Institut Teknologi Tangerang Selatan (Informatics, 07/2024 – present)
+- Politeknik Keuangan Negara STAN (Accounting and Finance, 2017 – 2018)
+
+PROFESSIONAL PROJECTS:
+- GSI - HRIS
+- Mavent Video Booth App
+- USFC - logistics tracking app
+
+PERSONAL PROJECTS:
 - Coco Face Recognition: Advanced face recognition system using deep learning and computer vision (Python)
 - LLM Chat: On-premise Large Language Model chat application with privacy and control (JavaScript)  
 - CocoSpeak: Text-to-speech and speech processing application with AI voice synthesis (Python)
 
-Organizations: @macra-id, @Gliana-Labs
-
-Contact & Social:
+CONTACT:
 - GitHub: https://github.com/Zetakai
 - LinkedIn: https://www.linkedin.com/in/mfzaki/
 - Portfolio: https://zetakai.github.io
@@ -372,7 +451,19 @@ I answer as Zaki's helpful assistant:`;
         }
         
         if (message.includes('experience') || message.includes('background')) {
-            return `${knowledge.personal.nickname} is a ${knowledge.personal.role} with ${knowledge.personal.experience}. He specializes in ${knowledge.skills.primary.join(' and ')} and has worked on AI/ML projects including face recognition systems and on-premise LLM chat applications. He's part of ${Object.values(knowledge.organizations).join(' and ')}.`;
+            return `${knowledge.personal.nickname} is a ${knowledge.personal.role} with ${knowledge.personal.experience}. He currently works at PT Macra Teknologi Indonesia where he has developed mobile apps utilizing FFmpeg, Firebase, React Native, and Google Maps API. He has published and maintained 10+ apps to both Google Play Store and Apple App Store, actively used by thousands of users. He also worked as a Freelance React Native Developer at TriSquare Technology.`;
+        }
+        
+        if (message.includes('work') || message.includes('job') || message.includes('company')) {
+            return `${knowledge.personal.nickname} currently works as a Mobile Developer at PT Macra Teknologi Indonesia (08/2022 – present) in Jakarta, Indonesia. He has developed mobile apps with advanced features like face recognition, live location tracking, and mapping using FFmpeg, Firebase, React Native, and Google Maps API. He has successfully published 10+ apps to both Google Play Store and Apple App Store.`;
+        }
+        
+        if (message.includes('education') || message.includes('degree') || message.includes('university')) {
+            return `${knowledge.personal.nickname} is currently studying Informatics at Institut Teknologi Tangerang Selatan (07/2024 – present). He previously studied Accounting and Finance at Politeknik Keuangan Negara STAN (2017 – 2018).`;
+        }
+        
+        if (message.includes('certificate') || message.includes('certification')) {
+            return `${knowledge.personal.nickname} has several certificates including Software & Data Engineering, Engineering with Python, Relational Database (SQL), Mobile App Developer (React Native), Javascript certificate, and Golang certificate.`;
         }
         
         if (message.includes('contact') || message.includes('hire') || message.includes('collaborate')) {
