@@ -228,14 +228,12 @@ class ChatWidget {
         this.showTypingIndicator();
 
         try {
-            // Get AI response (handles streaming internally)
+            // Get AI response
             const response = await this.getAIResponse(message);
             this.hideTypingIndicator();
             
-            // Only add message if it's not already added by streaming
-            if (!this.chatMessages.querySelector('.streaming-message')) {
-                this.addMessage(response, 'bot');
-            }
+            // Add message with pseudo-streaming animation
+            this.addStreamingMessage(response, 'bot');
         } catch (error) {
             this.hideTypingIndicator();
             this.addMessage("Sorry, I'm having trouble connecting right now. Please try again later.", 'bot');
@@ -261,6 +259,50 @@ class ChatWidget {
         
         // Store in history
         this.chatHistory.push({ content, sender, timestamp: Date.now() });
+    }
+
+    addStreamingMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message streaming-message`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = '';
+        
+        messageDiv.appendChild(contentDiv);
+        this.chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        
+        // Animate text typing
+        this.typeText(contentDiv, content, () => {
+            // Remove streaming class when done
+            messageDiv.classList.remove('streaming-message');
+            // Store in history
+            this.chatHistory.push({ content, sender, timestamp: Date.now() });
+        });
+    }
+
+    typeText(element, text, onComplete) {
+        let index = 0;
+        const speed = 30; // milliseconds per character
+        
+        const typeChar = () => {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                index++;
+                
+                // Scroll to bottom as text is being typed
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                
+                setTimeout(typeChar, speed);
+            } else {
+                if (onComplete) onComplete();
+            }
+        };
+        
+        typeChar();
     }
 
     showTypingIndicator() {
