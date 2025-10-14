@@ -357,7 +357,7 @@ class ChatWidget {
         }
 
         // Use your Cloudflare Workers AI endpoint with prompt engineering
-        const systemPrompt = `You are Zaki's AI assistant. Here's what you know about Zaki:
+        const systemPrompt = `You are Zaki's AI assistant. Your ONLY purpose is to answer questions about Zaki (Muhammad Farid Zaki). Here's what you know about Zaki:
 
 PERSONAL INFO:
 - Name: Muhammad Farid Zaki (Zaki)
@@ -416,7 +416,12 @@ CONTACT:
 - LinkedIn: https://www.linkedin.com/in/mfzaki/
 - Portfolio: https://zetakai.github.io
 
-Answer questions about Zaki's work, projects, and skills. Keep responses helpful, professional, and conversational.`;
+IMPORTANT: You are Zaki's AI assistant, but you can answer general questions too. However, always remind users that you're Zaki's AI assistant and gently guide them toward Zaki-related topics. When users ask off-topic questions, use phrases like:
+- "I can help with that, but just a friendly reminder - I'm Zaki's AI assistant! While I can answer general questions, I'm most knowledgeable about Zaki's work..."
+- "Sure, I can discuss that topic! By the way, as Zaki's AI assistant, I specialize in sharing information about his professional background..."
+- "I'd be happy to help with that! Just so you know, I'm here as Zaki's AI assistant, so I'm particularly well-versed in his career..."
+
+Always keep responses helpful, professional, and conversational while gently reminding users about your role as Zaki's assistant.`;
 
         const messages = [
             { role: 'system', content: systemPrompt },
@@ -489,7 +494,7 @@ Answer questions about Zaki's work, projects, and skills. Keep responses helpful
 
     createPrompt(userMessage) {
         // Simple, effective prompt engineering
-        return `I am Zaki's AI assistant. I know everything about Zaki:
+        return `I am Zaki's AI assistant. I ONLY discuss topics related to Zaki (Muhammad Farid Zaki). I know everything about Zaki:
 
 Zaki (Muhammad Farid Zaki) is a Mobile Developer with 3+ years experience. Username: Zetakai.
 
@@ -510,14 +515,39 @@ Organizations: @macra-id, @Gliana-Labs
 GitHub: https://github.com/Zetakai
 Portfolio: https://zetakai.github.io
 
+IMPORTANT: You can answer general questions, but always remind users that you're Zaki's AI assistant and gently guide them toward Zaki-related topics. Use phrases like "I can help with that, but just a friendly reminder - I'm Zaki's AI assistant!" or "Sure, I can discuss that topic! By the way, as Zaki's AI assistant, I specialize in..."
+
 User asks: "${userMessage}"
 
-I answer as Zaki's helpful assistant:`;
+I answer as Zaki's helpful assistant, staying focused on Zaki:`;
     }
 
     getKnowledgeBasedResponse(userMessage) {
         const message = userMessage.toLowerCase();
         const knowledge = ZAKI_KNOWLEDGE;
+        
+        // Check for off-topic questions and add gentle reminders
+        const offTopicKeywords = [
+            'weather', 'news', 'politics', 'sports', 'movie', 'music', 'food', 'travel',
+            'other developer', 'someone else', 'another person', 'general programming',
+            'how to code', 'tutorial', 'learning', 'course', 'book', 'advice',
+            'current events', 'world news', 'stock market', 'crypto', 'bitcoin',
+            'recipe', 'cooking', 'restaurant', 'shopping', 'fashion', 'health',
+            'medical', 'doctor', 'therapy', 'relationship', 'dating', 'love'
+        ];
+        
+        const isOffTopic = offTopicKeywords.some(keyword => message.includes(keyword));
+        
+        if (isOffTopic) {
+            // Provide a brief answer but remind about Zaki
+            const reminderResponses = [
+                `I can help with that, but just a friendly reminder - I'm Zaki's AI assistant! While I can answer general questions, I'm most knowledgeable about Zaki's work as a Mobile Developer and his AI projects. Feel free to ask about his experience, skills, or projects anytime!`,
+                `Sure, I can discuss that topic! By the way, as Zaki's AI assistant, I specialize in sharing information about his professional background, mobile development expertise, and innovative projects like Gliana Labs. Don't hesitate to ask about his work!`,
+                `I'd be happy to help with that! Just so you know, I'm here as Zaki's AI assistant, so I'm particularly well-versed in his career as a Mobile Developer, his technical skills, and his exciting AI projects. Feel free to explore those topics too!`,
+                `Of course! As Zaki's AI assistant, I can answer various questions, but I'm especially knowledgeable about his work in mobile development, AI technologies, and his projects. Feel free to ask about his professional journey anytime!`
+            ];
+            return reminderResponses[Math.floor(Math.random() * reminderResponses.length)];
+        }
         
         // Enhanced responses using the knowledge base
         if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
