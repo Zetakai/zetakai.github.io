@@ -18,6 +18,7 @@
                 <li><a href="#home">Home</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#projects">Projects</a></li>
+                <li><a href="#chat">Chat</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
         </div>
@@ -156,6 +157,67 @@
         </div>
     </section>
 
+    <!-- Chat Section -->
+    <section id="chat" class="chat-section">
+        <div class="container">
+            <h2 class="section-title">Chat with My AI Assistant</h2>
+            <div class="chat-section-content">
+                <div class="chat-info">
+                    <div class="chat-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                        </svg>
+                    </div>
+                    <h3>Ask Me Anything!</h3>
+                    <p class="chat-description">
+                        I've built an AI assistant powered by Cloudflare Workers AI with Llama 3 8B that knows all about my portfolio information. 
+                        It can answer detailed questions about my work, projects, and experience using prompt engineering. 
+                        Click the chat button in the bottom-right corner to start a conversation!
+                    </p>
+                    <div class="chat-features">
+                        <div class="feature">
+                            <span class="feature-icon">💬</span>
+                            <span>Ask about my projects</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🛠️</span>
+                            <span>Learn about my skills</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🤝</span>
+                            <span>Discuss collaboration</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">📱</span>
+                            <span>Mobile development insights</span>
+                        </div>
+                    </div>
+                    <div class="chat-cta">
+                        <button id="chat-section-toggle" class="btn btn-primary">
+                            Start Chatting
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-demo">
+                    <div class="demo-messages">
+                        <div class="demo-message user-demo">
+                            <div class="demo-content">What projects have you worked on?</div>
+                        </div>
+                        <div class="demo-message bot-demo">
+                            <div class="demo-content">I've worked on several interesting projects including Coco Face Recognition, LLM Chat, and CocoSpeak. I specialize in mobile development with React Native and have experience in AI/ML...</div>
+                        </div>
+                        <div class="demo-message user-demo">
+                            <div class="demo-content">Tell me about your AI experience</div>
+                        </div>
+                        <div class="demo-message bot-demo">
+                            <div class="demo-content">I have experience building face recognition systems, deploying on-premise LLM chat applications, and implementing intelligent solutions with modern AI technology...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
@@ -171,6 +233,12 @@
                         </svg>
                         GitHub
                     </a>
+                    <a href="https://www.linkedin.com/in/mfzaki/" target="_blank" class="contact-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                        </svg>
+                        LinkedIn
+                    </a>
                 </div>
             </div>
         </div>
@@ -182,6 +250,37 @@
             <p>&copy; 2025 Zetakai. Built with ❤️ and code.</p>
         </div>
     </footer>
+
+    <!-- LLM Chat Widget -->
+    <div id="chat-widget" class="chat-widget">
+        <div id="chat-toggle" class="chat-toggle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+            </svg>
+        </div>
+        
+        <div id="chat-container" class="chat-container">
+            <div class="chat-header">
+                <h3>Chat with Zaki</h3>
+                <button id="chat-close" class="chat-close">×</button>
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        Hi! I'm Zaki's AI assistant powered by Cloudflare Workers AI with Llama 3 8B. I know all about his work, projects, and skills! Ask me anything! 🤖✨
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Ask me anything..." />
+                <button id="chat-send" class="chat-send">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
