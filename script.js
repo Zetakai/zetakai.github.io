@@ -286,18 +286,41 @@ class ChatWidget {
 
     typeText(element, text, onComplete) {
         let index = 0;
-        const speed = 15; // milliseconds per character
+        const speed = 20; // milliseconds per character
+        let userScrolling = false;
+        let scrollTimeout;
+
+        // Track user scrolling
+        const handleScroll = () => {
+            userScrolling = true;
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                userScrolling = false;
+            }, 1000); // Reset after 1 second of no scrolling
+        };
+
+        // Add scroll listener
+        this.chatMessages.addEventListener('scroll', handleScroll);
 
         const typeChar = () => {
             if (index < text.length) {
                 element.textContent += text.charAt(index);
                 index++;
 
-                // Scroll to bottom as text is being typed
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                // Only auto-scroll if user isn't manually scrolling
+                if (!userScrolling) {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                }
 
                 setTimeout(typeChar, speed);
             } else {
+                // Remove scroll listener when done
+                this.chatMessages.removeEventListener('scroll', handleScroll);
+                clearTimeout(scrollTimeout);
+                
+                // Final scroll to bottom when typing is complete
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                
                 if (onComplete) onComplete();
             }
         };
