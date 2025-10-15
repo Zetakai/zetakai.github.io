@@ -286,7 +286,7 @@ class ChatWidget {
 
     typeText(element, text, onComplete) {
         let index = 0;
-        const speed = 30; // milliseconds per character
+        const speed = 15; // milliseconds per character
 
         const typeChar = () => {
             if (index < text.length) {
