@@ -859,7 +859,7 @@ section {
     color: #4ade80;
 }
 
-/* TTS Settings Panel */
+/* Text-to-Speech (TTS) Settings Panel */
 .tts-settings {
     position: absolute;
     bottom: 80px;

@@ -247,7 +247,7 @@ class ChatWidget {
         this.isOpen = false;
         this.isTyping = false;
         this.chatHistory = [];
-        this.ttsEnabled = true; // Enable TTS by default
+        this.ttsEnabled = true; // Enable Text-to-Speech (TTS) by default
         this.currentSpeech = null;
         this.highlightTimeout = null;
         this.initializeElements();
@@ -311,7 +311,7 @@ class ChatWidget {
         this.stopSpeech();
         // Clear any remaining highlighting
         this.clearWordHighlighting();
-        // Hide TTS settings
+        // Hide Text-to-Speech settings
         this.hideTTSSettings();
     }
 
@@ -364,7 +364,7 @@ class ChatWidget {
         // Store in history
         this.chatHistory.push({ content, sender, timestamp: Date.now() });
         
-        // Trigger TTS for bot messages
+        // Trigger Text-to-Speech for bot messages
         if (sender === 'bot' && this.ttsEnabled) {
             this.speakText(content);
         }
@@ -391,7 +391,7 @@ class ChatWidget {
             // Store in history
             this.chatHistory.push({ content, sender, timestamp: Date.now() });
             
-            // Trigger TTS for bot messages
+            // Trigger Text-to-Speech for bot messages
             if (sender === 'bot' && this.ttsEnabled) {
                 this.speakText(content);
             }
@@ -465,7 +465,7 @@ class ChatWidget {
         }
     }
 
-    // ==================== TTS Functionality ====================
+    // ==================== Text-to-Speech (TTS) Functionality ====================
     initializeTTS() {
         // Check if browser supports speech synthesis
         if ('speechSynthesis' in window) {
@@ -478,7 +478,7 @@ class ChatWidget {
                 this.speechSynthesis.onvoiceschanged = () => this.loadVoices();
             }
             
-            // Set TTS as active by default
+            // Set Text-to-Speech as active by default
             this.ttsToggle.classList.add('active');
             this.ttsToggle.title = 'Text-to-Speech: ON';
         } else {
@@ -640,6 +640,12 @@ class ChatWidget {
             let baseTime = Math.max(200, text.length * 50);
             let complexityMultiplier = text.match(/[aeiou]/gi) ? 1.2 : 1.0;
             
+            // Handle abbreviations (TTS, AI, API, etc.) - each letter is spoken individually
+            if (text.match(/^[A-Z]{2,4}$/) && text.length <= 4) {
+                baseTime = Math.max(300, text.length * 80); // Slower for abbreviations
+                complexityMultiplier = 1.5; // Increase complexity multiplier
+            }
+            
             // Add extra time for punctuation
             if (text.match(/[.!?]$/)) {
                 baseTime += 400; // Full stop, exclamation, question mark
@@ -710,7 +716,7 @@ class ChatWidget {
             });
     }
 
-    // TTS Settings Methods
+    // Text-to-Speech Settings Methods
     toggleTTSSettings() {
         this.ttsSettings.classList.toggle('show');
     }
