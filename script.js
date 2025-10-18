@@ -54,6 +54,79 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ==================== GitHub Data Fetcher ====================
+class GitHubDataFetcher {
+    constructor() {
+        this.username = 'Zetakai';
+        this.cache = {
+            repos: null,
+            profile: null,
+            lastFetch: 0
+        };
+        this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+    }
+
+    async fetchGitHubData() {
+        const now = Date.now();
+        
+        // Return cached data if still fresh
+        if (this.cache.repos && this.cache.profile && (now - this.cache.lastFetch) < this.cacheTimeout) {
+            return this.cache;
+        }
+
+        try {
+            const [reposResponse, profileResponse] = await Promise.all([
+                fetch(`https://api.github.com/users/${this.username}/repos?sort=updated&per_page=10`),
+                fetch(`https://api.github.com/users/${this.username}`)
+            ]);
+
+            if (!reposResponse.ok || !profileResponse.ok) {
+                throw new Error('Failed to fetch GitHub data');
+            }
+
+            const repos = await reposResponse.json();
+            const profile = await profileResponse.json();
+
+            this.cache = {
+                repos: repos,
+                profile: profile,
+                lastFetch: now
+            };
+
+            return this.cache;
+        } catch (error) {
+            console.warn('Failed to fetch GitHub data:', error);
+            return this.cache; // Return cached data or null
+        }
+    }
+
+    async getRepositories() {
+        const data = await this.fetchGitHubData();
+        return data?.repos || [];
+    }
+
+    async getProfile() {
+        const data = await this.fetchGitHubData();
+        return data?.profile || null;
+    }
+
+    async updatePortfolioStats() {
+        try {
+            const profile = await this.getProfile();
+            if (profile) {
+                // Update the floating card stats
+                const repoCount = document.querySelector('.stat-number');
+                const followerCount = document.querySelectorAll('.stat-number')[1];
+                
+                if (repoCount) repoCount.textContent = profile.public_repos || '0';
+                if (followerCount) followerCount.textContent = profile.followers || '0';
+            }
+        } catch (error) {
+            console.warn('Failed to update portfolio stats:', error);
+        }
+    }
+}
+
 // ==================== Zaki's Knowledge Base ====================
 const ZAKI_KNOWLEDGE = {
     personal: {
@@ -174,8 +247,12 @@ class ChatWidget {
         this.isOpen = false;
         this.isTyping = false;
         this.chatHistory = [];
+        this.ttsEnabled = true; // Enable TTS by default
+        this.currentSpeech = null;
+        this.highlightTimeout = null;
         this.initializeElements();
         this.bindEvents();
+        this.initializeTTS();
     }
 
     initializeElements() {
@@ -185,12 +262,29 @@ class ChatWidget {
         this.chatInput = document.getElementById('chat-input');
         this.chatSend = document.getElementById('chat-send');
         this.chatMessages = document.getElementById('chat-messages');
+        this.ttsToggle = document.getElementById('tts-toggle');
+        this.ttsSettings = document.getElementById('tts-settings');
+        this.ttsSettingsClose = document.getElementById('tts-settings-close');
+        this.ttsVoice = document.getElementById('tts-voice');
+        this.ttsRate = document.getElementById('tts-rate');
+        this.ttsVolume = document.getElementById('tts-volume');
+        this.ttsRateValue = document.getElementById('tts-rate-value');
+        this.ttsVolumeValue = document.getElementById('tts-volume-value');
     }
 
     bindEvents() {
         this.chatToggle.addEventListener('click', () => this.toggleChat());
         this.chatClose.addEventListener('click', () => this.closeChat());
         this.chatSend.addEventListener('click', () => this.sendMessage());
+        this.ttsToggle.addEventListener('click', () => this.toggleTTS());
+        this.ttsToggle.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.toggleTTSSettings();
+        });
+        this.ttsSettingsClose.addEventListener('click', () => this.hideTTSSettings());
+        this.ttsVoice.addEventListener('change', () => this.updateTTSVoice());
+        this.ttsRate.addEventListener('input', () => this.updateTTSRate());
+        this.ttsVolume.addEventListener('input', () => this.updateTTSVolume());
         this.chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -213,11 +307,21 @@ class ChatWidget {
     closeChat() {
         this.isOpen = false;
         this.chatContainer.classList.remove('active');
+        // Stop any ongoing speech when closing chat
+        this.stopSpeech();
+        // Clear any remaining highlighting
+        this.clearWordHighlighting();
+        // Hide TTS settings
+        this.hideTTSSettings();
     }
 
     async sendMessage() {
         const message = this.chatInput.value.trim();
         if (!message || this.isTyping) return;
+
+        // Stop any ongoing speech and clear highlighting before starting new message
+        this.stopSpeech();
+        this.clearWordHighlighting();
 
         // Add user message
         this.addMessage(message, 'user');
@@ -259,6 +363,11 @@ class ChatWidget {
 
         // Store in history
         this.chatHistory.push({ content, sender, timestamp: Date.now() });
+        
+        // Trigger TTS for bot messages
+        if (sender === 'bot' && this.ttsEnabled) {
+            this.speakText(content);
+        }
     }
 
     addStreamingMessage(content, sender) {
@@ -281,6 +390,11 @@ class ChatWidget {
             messageDiv.classList.remove('streaming-message');
             // Store in history
             this.chatHistory.push({ content, sender, timestamp: Date.now() });
+            
+            // Trigger TTS for bot messages
+            if (sender === 'bot' && this.ttsEnabled) {
+                this.speakText(content);
+            }
         });
     }
 
@@ -351,6 +465,283 @@ class ChatWidget {
         }
     }
 
+    // ==================== TTS Functionality ====================
+    initializeTTS() {
+        // Check if browser supports speech synthesis
+        if ('speechSynthesis' in window) {
+            this.speechSynthesis = window.speechSynthesis;
+            this.voices = [];
+            this.loadVoices();
+            
+            // Load voices when they become available
+            if (this.speechSynthesis.onvoiceschanged !== undefined) {
+                this.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+            }
+            
+            // Set TTS as active by default
+            this.ttsToggle.classList.add('active');
+            this.ttsToggle.title = 'Text-to-Speech: ON';
+        } else {
+            console.warn('Speech synthesis not supported in this browser');
+            this.ttsToggle.style.display = 'none';
+        }
+    }
+
+    loadVoices() {
+        this.voices = this.speechSynthesis.getVoices();
+        // Prefer English voices, fallback to first available
+        this.selectedVoice = this.voices.find(voice => 
+            voice.lang.startsWith('en') && voice.name.includes('Google')
+        ) || this.voices.find(voice => voice.lang.startsWith('en')) || this.voices[0];
+        
+        // Populate voice dropdown
+        this.populateVoiceDropdown();
+    }
+
+    populateVoiceDropdown() {
+        if (!this.ttsVoice) return;
+        
+        this.ttsVoice.innerHTML = '<option value="auto">Auto (Best Available)</option>';
+        
+        this.voices.forEach((voice, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${voice.name} (${voice.lang})`;
+            this.ttsVoice.appendChild(option);
+        });
+    }
+
+    toggleTTS() {
+        this.ttsEnabled = !this.ttsEnabled;
+        
+        if (this.ttsEnabled) {
+            this.ttsToggle.classList.add('active');
+            this.ttsToggle.title = 'Text-to-Speech: ON';
+        } else {
+            this.ttsToggle.classList.remove('active');
+            this.ttsToggle.title = 'Text-to-Speech: OFF';
+            this.stopSpeech();
+        }
+    }
+
+    speakText(text) {
+        if (!this.ttsEnabled || !this.speechSynthesis) return;
+
+        // Stop any current speech
+        this.stopSpeech();
+        
+        // Small delay to ensure previous speech is fully stopped
+        setTimeout(() => {
+            this.startSpeech(text);
+        }, 50);
+    }
+
+    startSpeech(text) {
+        if (!this.ttsEnabled || !this.speechSynthesis || this.speechSynthesis.speaking) {
+            return;
+        }
+
+        const cleanText = text
+            .replace(/[^\w\s.,!?;:]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!cleanText) return;
+
+        // Setup word highlighting
+        const messageElement = this.findMessageElement(text);
+        messageElement && this.setupWordHighlighting(messageElement, cleanText);
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Configure speech settings
+        utterance.voice = this.getSelectedVoice();
+        utterance.rate = parseFloat(this.ttsRate?.value || 0.9);
+        utterance.pitch = 1.0;
+        utterance.volume = parseFloat(this.ttsVolume?.value || 0.8);
+
+        // Handle speech events
+        utterance.onstart = () => this.ttsToggle.style.opacity = '1';
+        utterance.onend = () => {
+            this.currentSpeech = null;
+            this.ttsToggle.style.opacity = '0.8';
+            this.clearWordHighlighting();
+        };
+        utterance.onerror = (event) => {
+            if (event.error !== 'interrupted') {
+                console.warn('Speech synthesis error:', event.error);
+            }
+            this.currentSpeech = null;
+            this.ttsToggle.style.opacity = '0.8';
+            this.clearWordHighlighting();
+        };
+
+        this.currentSpeech = utterance;
+        this.speechSynthesis.speak(utterance);
+    }
+
+    stopSpeech() {
+        this.currentSpeech = null;
+        
+        if (this.speechSynthesis?.speaking) {
+            this.speechSynthesis.cancel();
+        }
+        
+        this.ttsToggle && (this.ttsToggle.style.opacity = '0.8');
+        this.clearWordHighlighting();
+    }
+
+    // Word Highlighting Methods
+    findMessageElement(text) {
+        const messages = this.chatMessages.querySelectorAll('.message-content');
+        const cleanText = text.trim();
+        
+        // Find the most recent bot message that matches
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const message = messages[i];
+            const messageText = message.textContent.trim();
+            
+            if (message.closest('.bot-message') && 
+                (messageText === cleanText || messageText.includes(cleanText.substring(0, 50)))) {
+                return message;
+            }
+        }
+        return null;
+    }
+
+    setupWordHighlighting(messageElement, text) {
+        this.clearWordHighlighting();
+        
+        const words = text.split(/(\s+)/);
+        let wordIndex = 0;
+        
+        const highlightedHTML = words.map(word => {
+            if (word.trim()) {
+                return `<span class="tts-word" data-word-index="${wordIndex++}">${word}</span>`;
+            }
+            return word;
+        }).join('');
+        
+        messageElement.setAttribute('data-original-content', messageElement.innerHTML);
+        messageElement.innerHTML = highlightedHTML;
+        
+        this.startWordHighlighting(messageElement, wordIndex);
+    }
+
+    startWordHighlighting(messageElement, wordCount) {
+        const rate = parseFloat(this.ttsRate?.value || 0.9);
+        const words = messageElement.querySelectorAll('.tts-word');
+        
+        let currentWordIndex = 0;
+        
+        // Calculate timing for each word based on length, complexity, and punctuation
+        const wordTimings = Array.from(words).map(word => {
+            const text = word.textContent;
+            let baseTime = Math.max(200, text.length * 50);
+            let complexityMultiplier = text.match(/[aeiou]/gi) ? 1.2 : 1.0;
+            
+            // Add extra time for punctuation
+            if (text.match(/[.!?]$/)) {
+                baseTime += 400; // Full stop, exclamation, question mark
+            } else if (text.match(/[,;:]$/)) {
+                baseTime += 200; // Comma, semicolon, colon
+            } else if (text.match(/[-–—]$/)) {
+                baseTime += 150; // Dashes
+            }
+            
+            return (baseTime * complexityMultiplier) / rate;
+        });
+        
+        const highlightNextWord = () => {
+            if (!this.speechSynthesis.speaking || !messageElement?.parentNode) {
+                this.clearWordHighlighting();
+                return;
+            }
+            
+            // Remove previous highlight
+            const prevWord = messageElement.querySelector('.tts-word.highlighted');
+            prevWord?.classList.remove('highlighted');
+            
+            // Add highlight to current word
+            const currentWord = messageElement.querySelector(`[data-word-index="${currentWordIndex}"]`);
+            currentWord?.classList.add('highlighted');
+            
+            currentWordIndex++;
+            
+            // Schedule next word or finish
+            if (currentWordIndex < wordCount) {
+                const nextDelay = wordTimings[currentWordIndex] || 300;
+                this.highlightTimeout = setTimeout(highlightNextWord, nextDelay);
+            } else {
+                this.highlightTimeout = setTimeout(() => this.clearWordHighlighting(), 500);
+            }
+        };
+        
+        this.highlightTimeout = setTimeout(highlightNextWord, 100);
+    }
+
+    clearWordHighlighting() {
+        if (this.highlightTimeout) {
+            clearTimeout(this.highlightTimeout);
+            this.highlightTimeout = null;
+        }
+        
+        // Remove all highlights
+        this.chatMessages.querySelectorAll('.tts-word.highlighted')
+            .forEach(word => word.classList.remove('highlighted'));
+        
+        // Restore original content
+        this.chatMessages.querySelectorAll('[data-original-content]')
+            .forEach(element => {
+                const originalContent = element.getAttribute('data-original-content');
+                if (originalContent) {
+                    element.innerHTML = originalContent;
+                    element.removeAttribute('data-original-content');
+                }
+            });
+        
+        // Clean up orphaned TTS word spans
+        this.chatMessages.querySelectorAll('.tts-word')
+            .forEach(word => {
+                const messageElement = word.closest('.message-content');
+                if (messageElement && !messageElement.hasAttribute('data-original-content')) {
+                    word.replaceWith(word.textContent);
+                }
+            });
+    }
+
+    // TTS Settings Methods
+    toggleTTSSettings() {
+        this.ttsSettings.classList.toggle('show');
+    }
+
+    showTTSSettings() {
+        this.ttsSettings.classList.add('show');
+    }
+
+    hideTTSSettings() {
+        this.ttsSettings.classList.remove('show');
+    }
+
+    getSelectedVoice() {
+        const voiceIndex = this.ttsVoice?.value;
+        return (voiceIndex === 'auto' || !voiceIndex) 
+            ? this.selectedVoice 
+            : this.voices[parseInt(voiceIndex)] || this.selectedVoice;
+    }
+
+    updateTTSVoice() {
+        console.log('Voice updated to:', this.getSelectedVoice()?.name);
+    }
+
+    updateTTSRate() {
+        this.ttsRateValue.textContent = `${this.ttsRate.value}x`;
+    }
+
+    updateTTSVolume() {
+        this.ttsVolumeValue.textContent = `${Math.round(this.ttsVolume.value * 100)}%`;
+    }
+
     async getAIResponse(userMessage) {
         // Use Cloudflare Workers AI with prompt engineering
 
@@ -364,13 +755,13 @@ class ChatWidget {
 
             // If it's a static environment, provide a helpful message
             if (error.message === 'AI chat requires a live server environment') {
-                return this.getKnowledgeBasedResponse(userMessage) +
+                return await this.getKnowledgeBasedResponse(userMessage) +
                     "\n\n💡 Note: For the full AI experience, visit this portfolio on a live server environment.";
             }
         }
 
         // Fall back to enhanced knowledge-based responses
-        return this.getKnowledgeBasedResponse(userMessage);
+        return await this.getKnowledgeBasedResponse(userMessage);
     }
 
     async getCloudflareAIResponse(userMessage) {
@@ -409,9 +800,18 @@ class ChatWidget {
     }
 
 
-    getKnowledgeBasedResponse(userMessage) {
+    async getKnowledgeBasedResponse(userMessage) {
         const message = userMessage.toLowerCase();
         const knowledge = ZAKI_KNOWLEDGE;
+        
+        // Try to get real GitHub data for more accurate responses
+        let githubData = null;
+        try {
+            const githubFetcher = new GitHubDataFetcher();
+            githubData = await githubFetcher.fetchGitHubData();
+        } catch (error) {
+            console.warn('Could not fetch GitHub data for response:', error);
+        }
 
         // Check for off-topic questions and add gentle reminders
         const offTopicKeywords = [
@@ -442,8 +842,17 @@ class ChatWidget {
         }
 
         if (message.includes('project') || message.includes('work')) {
-            const projectList = Object.keys(knowledge.projects).join(', ');
-            return `${knowledge.personal.nickname} has worked on several interesting projects: ${projectList}. He specializes in ${knowledge.skills.primary.join(' and ')} and has experience in ${knowledge.skills.technologies.join(', ')}. Would you like to know more about any specific project?`;
+            let projectInfo = '';
+            
+            if (githubData?.repos && githubData.repos.length > 0) {
+                const recentRepos = githubData.repos.slice(0, 5).map(repo => repo.name).join(', ');
+                projectInfo = `${knowledge.personal.nickname} has ${githubData.profile.public_repos} repositories on GitHub. Some recent projects include: ${recentRepos}. `;
+            } else {
+                const projectList = Object.keys(knowledge.projects).join(', ');
+                projectInfo = `${knowledge.personal.nickname} has worked on several interesting projects: ${projectList}. `;
+            }
+            
+            return projectInfo + `He specializes in ${knowledge.skills.primary.join(' and ')} and has experience in ${knowledge.skills.technologies.join(', ')}. Would you like to know more about any specific project?`;
         }
 
         if (message.includes('skill') || message.includes('technology') || message.includes('tech')) {
@@ -535,6 +944,10 @@ class ChatWidget {
 // Initialize chat widget when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const chatWidget = new ChatWidget();
+    const githubFetcher = new GitHubDataFetcher();
+
+    // Update portfolio stats with real GitHub data
+    githubFetcher.updatePortfolioStats();
 
     // Connect chat section button to chat widget
     const chatSectionToggle = document.getElementById('chat-section-toggle');
