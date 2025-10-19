@@ -249,7 +249,6 @@ class ChatWidget {
         this.chatHistory = [];
         this.ttsEnabled = true; // Enable Text-to-Speech (TTS) by default
         this.currentSpeech = null;
-        this.highlightTimeout = null;
         this.initializeElements();
         this.bindEvents();
         this.initializeTTS();
@@ -309,8 +308,6 @@ class ChatWidget {
         this.chatContainer.classList.remove('active');
         // Stop any ongoing speech when closing chat
         this.stopSpeech();
-        // Clear any remaining highlighting
-        this.clearWordHighlighting();
         // Hide Text-to-Speech settings
         this.hideTTSSettings();
     }
@@ -319,9 +316,8 @@ class ChatWidget {
         const message = this.chatInput.value.trim();
         if (!message || this.isTyping) return;
 
-        // Stop any ongoing speech and clear highlighting before starting new message
+        // Stop any ongoing speech before starting new message
         this.stopSpeech();
-        this.clearWordHighlighting();
 
         // Add user message
         this.addMessage(message, 'user');
@@ -364,7 +360,7 @@ class ChatWidget {
         // Store in history
         this.chatHistory.push({ content, sender, timestamp: Date.now() });
         
-        // Trigger Text-to-Speech for bot messages
+        // Trigger Text-to-Speech for bot messages immediately
         if (sender === 'bot' && this.ttsEnabled) {
             this.speakText(content);
         }
@@ -384,17 +380,17 @@ class ChatWidget {
         // Scroll to bottom
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
 
+        // Trigger Text-to-Speech for bot messages immediately (before typing animation)
+        if (sender === 'bot' && this.ttsEnabled) {
+            this.speakText(content);
+        }
+
         // Animate text typing
         this.typeText(contentDiv, content, () => {
             // Remove streaming class when done
             messageDiv.classList.remove('streaming-message');
             // Store in history
             this.chatHistory.push({ content, sender, timestamp: Date.now() });
-            
-            // Trigger Text-to-Speech for bot messages
-            if (sender === 'bot' && this.ttsEnabled) {
-                this.speakText(content);
-            }
         });
     }
 
@@ -548,10 +544,6 @@ class ChatWidget {
 
         if (!cleanText) return;
 
-        // Setup word highlighting
-        const messageElement = this.findMessageElement(text);
-        messageElement && this.setupWordHighlighting(messageElement, cleanText);
-
         const utterance = new SpeechSynthesisUtterance(cleanText);
         
         // Configure speech settings
@@ -565,7 +557,6 @@ class ChatWidget {
         utterance.onend = () => {
             this.currentSpeech = null;
             this.ttsToggle.style.opacity = '0.8';
-            this.clearWordHighlighting();
         };
         utterance.onerror = (event) => {
             if (event.error !== 'interrupted') {
@@ -573,7 +564,6 @@ class ChatWidget {
             }
             this.currentSpeech = null;
             this.ttsToggle.style.opacity = '0.8';
-            this.clearWordHighlighting();
         };
 
         this.currentSpeech = utterance;
@@ -588,133 +578,8 @@ class ChatWidget {
         }
         
         this.ttsToggle && (this.ttsToggle.style.opacity = '0.8');
-        this.clearWordHighlighting();
     }
 
-    // Word Highlighting Methods
-    findMessageElement(text) {
-        const messages = this.chatMessages.querySelectorAll('.message-content');
-        const cleanText = text.trim();
-        
-        // Find the most recent bot message that matches
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const message = messages[i];
-            const messageText = message.textContent.trim();
-            
-            if (message.closest('.bot-message') && 
-                (messageText === cleanText || messageText.includes(cleanText.substring(0, 50)))) {
-                return message;
-            }
-        }
-        return null;
-    }
-
-    setupWordHighlighting(messageElement, text) {
-        this.clearWordHighlighting();
-        
-        const words = text.split(/(\s+)/);
-        let wordIndex = 0;
-        
-        const highlightedHTML = words.map(word => {
-            if (word.trim()) {
-                return `<span class="tts-word" data-word-index="${wordIndex++}">${word}</span>`;
-            }
-            return word;
-        }).join('');
-        
-        messageElement.setAttribute('data-original-content', messageElement.innerHTML);
-        messageElement.innerHTML = highlightedHTML;
-        
-        this.startWordHighlighting(messageElement, wordIndex);
-    }
-
-    startWordHighlighting(messageElement, wordCount) {
-        const rate = parseFloat(this.ttsRate?.value || 0.9);
-        const words = messageElement.querySelectorAll('.tts-word');
-        
-        let currentWordIndex = 0;
-        
-        // Calculate timing for each word based on length, complexity, and punctuation
-        const wordTimings = Array.from(words).map(word => {
-            const text = word.textContent;
-            let baseTime = Math.max(200, text.length * 50);
-            let complexityMultiplier = text.match(/[aeiou]/gi) ? 1.2 : 1.0;
-            
-            // Handle abbreviations (TTS, AI, API, etc.) - each letter is spoken individually
-            if (text.match(/^[A-Z]{2,4}$/) && text.length <= 4) {
-                baseTime = Math.max(300, text.length * 80); // Slower for abbreviations
-                complexityMultiplier = 1.5; // Increase complexity multiplier
-            }
-            
-            // Add extra time for punctuation
-            if (text.match(/[.!?]$/)) {
-                baseTime += 400; // Full stop, exclamation, question mark
-            } else if (text.match(/[,;:]$/)) {
-                baseTime += 200; // Comma, semicolon, colon
-            } else if (text.match(/[-–—]$/)) {
-                baseTime += 150; // Dashes
-            }
-            
-            return (baseTime * complexityMultiplier) / rate;
-        });
-        
-        const highlightNextWord = () => {
-            if (!this.speechSynthesis.speaking || !messageElement?.parentNode) {
-                this.clearWordHighlighting();
-                return;
-            }
-            
-            // Remove previous highlight
-            const prevWord = messageElement.querySelector('.tts-word.highlighted');
-            prevWord?.classList.remove('highlighted');
-            
-            // Add highlight to current word
-            const currentWord = messageElement.querySelector(`[data-word-index="${currentWordIndex}"]`);
-            currentWord?.classList.add('highlighted');
-            
-            currentWordIndex++;
-            
-            // Schedule next word or finish
-            if (currentWordIndex < wordCount) {
-                const nextDelay = wordTimings[currentWordIndex] || 300;
-                this.highlightTimeout = setTimeout(highlightNextWord, nextDelay);
-            } else {
-                this.highlightTimeout = setTimeout(() => this.clearWordHighlighting(), 500);
-            }
-        };
-        
-        this.highlightTimeout = setTimeout(highlightNextWord, 100);
-    }
-
-    clearWordHighlighting() {
-        if (this.highlightTimeout) {
-            clearTimeout(this.highlightTimeout);
-            this.highlightTimeout = null;
-        }
-        
-        // Remove all highlights
-        this.chatMessages.querySelectorAll('.tts-word.highlighted')
-            .forEach(word => word.classList.remove('highlighted'));
-        
-        // Restore original content
-        this.chatMessages.querySelectorAll('[data-original-content]')
-            .forEach(element => {
-                const originalContent = element.getAttribute('data-original-content');
-                if (originalContent) {
-                    element.innerHTML = originalContent;
-                    element.removeAttribute('data-original-content');
-                }
-            });
-        
-        // Clean up orphaned TTS word spans
-        this.chatMessages.querySelectorAll('.tts-word')
-            .forEach(word => {
-                const messageElement = word.closest('.message-content');
-                if (messageElement && !messageElement.hasAttribute('data-original-content')) {
-                    word.replaceWith(word.textContent);
-                }
-            });
-    }
 
     // Text-to-Speech Settings Methods
     toggleTTSSettings() {
