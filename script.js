@@ -247,7 +247,7 @@ class ChatWidget {
         this.isOpen = false;
         this.isTyping = false;
         this.chatHistory = [];
-        this.ttsEnabled = true; // Enable Text-to-Speech (TTS) by default
+        this.ttsEnabled = false; // Disable Text-to-Speech (TTS) by default
         this.currentSpeech = null;
         this.initializeElements();
         this.bindEvents();
@@ -474,9 +474,9 @@ class ChatWidget {
                 this.speechSynthesis.onvoiceschanged = () => this.loadVoices();
             }
             
-            // Set Text-to-Speech as active by default
-            this.ttsToggle.classList.add('active');
-            this.ttsToggle.title = 'Text-to-Speech: ON';
+            // Set Text-to-Speech as inactive by default
+            this.ttsToggle.classList.remove('active');
+            this.ttsToggle.title = 'Text-to-Speech: OFF';
         } else {
             console.warn('Speech synthesis not supported in this browser');
             this.ttsToggle.style.display = 'none';

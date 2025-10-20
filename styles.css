@@ -444,6 +444,14 @@ section {
     text-align: left;
 }
 
+.chat-disclaimer {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.75rem;
+    opacity: 0.8;
+    font-style: italic;
+}
+
 .chat-demo {
     background: white;
     border-radius: 1rem;
